@@ -125,6 +125,8 @@ func (p *ClaudeCodeProvider) buildArgs(systemPrompt string, streaming bool, snap
 
 	if streaming {
 		args = append(args, "--output-format", "stream-json")
+		// claude CLI 要求 stream-json 必须搭配 --verbose（否则会报错退出）
+		args = append(args, "--verbose")
 	} else {
 		args = append(args, "--output-format", "json")
 	}

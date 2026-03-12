@@ -223,7 +223,7 @@ func validateConfig(cfg *CodeDebateConfig) error {
 		return err
 	}
 	if !cfg.Mock && !isAPIModel(cfg.Summarizer, cfg) && !isMockModel(cfg.Summarizer.Model) {
-		return fmt.Errorf("config error: summarizer.model must be an API model (gpt-*/o1-*/o3-*/o4-* or with explicit provider), got %q", cfg.Summarizer.Model)
+		return fmt.Errorf("config error: summarizer.model must be an API model (gpt-*/o1-*/o3-*/o4-* or with explicit provider), got %q (for custom models like glm-5, add summarizer.provider and define that provider under providers)", cfg.Summarizer.Model)
 	}
 
 	// 验证分析器配置

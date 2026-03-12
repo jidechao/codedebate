@@ -12,6 +12,8 @@
   <a href="#快速开始">快速开始</a> ·
   <a href="#它是怎么工作的">工作原理</a> ·
   <a href="#核心特性">核心特性</a> ·
+  <a href="#常见问题">常见问题</a> ·
+  <a href="#开发与测试">开发</a> ·
   <a href="docs/configuration.md">配置</a> ·
   <a href="docs/cli-reference.md">CLI 参考</a>
 </p>
@@ -142,6 +144,11 @@ codedebate review 42 --reviewers claude,gpt4o --rounds 2
 
 自动去重，不会重复发布相同评论。
 
+### 配置要点
+
+- **Summarizer 必须使用 API 模型**：`summarizer.model` 需为 OpenAI 风格（`gpt-*`、`o1-*`、`o3-*`、`o4-*`）或**显式指定** `summarizer.provider`。若使用智谱 GLM、DeepSeek、OpenRouter 等自定义模型，请在 `providers` 中定义对应 provider（如 `zhipu`），并在 summarizer 下设置 `provider: zhipu`。详见 [配置说明](docs/configuration.md)。
+- **配置文件路径**：默认 `~/.codedebate/config.yaml`，可通过 `codedebate review -c /path/to/config.yaml` 覆盖。
+
 ### GitLab Webhook 自动化
 
 部署为服务，MR 创建/更新时自动触发审查：
@@ -159,14 +166,33 @@ codedebate serve --webhook-secret your-secret
 - 相关 PR/MR 历史
 - 项目文档收集
 
+## 常见问题
+
+| 现象 | 原因 | 处理 |
+|------|------|------|
+| `summarizer.model must be an API model ... got "glm-5"` | 使用了非 OpenAI 前缀的模型且未指定 provider | 在配置中为 GLM 等增加 `providers.xxx`，并在 `summarizer` 下设置 `provider: xxx` |
+| `config file not found` | 未初始化或路径错误 | 执行 `codedebate init` 生成 `~/.codedebate/config.yaml`，或用 `-c` 指定配置文件 |
+| PR/MR 评论未发布 | 未安装或未登录平台 CLI | GitHub 需安装并登录 `gh`，GitLab 需安装并登录 `glab` |
+| 审查卡住或超时 | 模型响应慢或网络问题 | 减少 `max_rounds`、换用更快模型，或使用 `--no-post` 仅本地输出 |
+
+## 开发与测试
+
+```bash
+make build    # 编译
+make test     # 运行测试
+make install  # 安装到 $GOPATH/bin
+make lint     # 代码检查（需安装 golangci-lint）
+```
+
 ## 更多文档
 
 | 文档 | 内容 |
 |------|------|
 | [安装指南](docs/installation.md) | 完整的安装步骤和依赖说明 |
-| [配置说明](docs/configuration.md) | 配置文件详解、环境变量、AI 提供者设置 |
+| [配置说明](docs/configuration.md) | 配置文件详解、环境变量、AI 提供者与 summarizer/provider 设置 |
 | [CLI 参考](docs/cli-reference.md) | 所有命令和参数的完整参考 |
 | [设计决策](docs/design.md) | 架构设计、辩论流程、降级策略等技术细节 |
+| [项目介绍](docs/codedebate-introduction.md) | 背景、痛点与设计理念的详细说明 |
 
 ## 许可证
 

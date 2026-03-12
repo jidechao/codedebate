@@ -1,0 +1,96 @@
+# CodeDebate Configuration
+# Multi-model adversarial code review
+
+providers:
+  claude-code:
+    enabled: true
+  codex-cli:
+    enabled: true
+  # openai:
+    # api_key: ${OPENAI_API_KEY}
+    # base_url: https://api.openai.com/v1  # optional, for Azure/Ollama compatibility
+  # gemini-cli:
+  #   enabled: true
+  # openrouter:
+  #   api_key: ${OPENROUTER_API_KEY}
+  #   base_url: https://openrouter.ai/api/v1
+  # minimax:
+  #   api_key: ${MINIMAX_API_KEY}
+  #   base_url: https://api.minimax.io/v1
+  glm:
+    enabled: true
+    api_key: ${GLM_API_KEY}
+    base_url: https://open.bigmodel.cn/api/paas/v4
+
+defaults:
+  max_rounds: 5
+  output_format: markdown
+  check_convergence: true
+  structurize_mode: legacy  # legacy | ledger
+  language: zh  # Output language (e.g. zh, ja, en). Empty = English
+  # diff_exclude:  # Additional patterns to exclude from diff (e.g. ["*.min.js", "dist/**"])
+  # prompt_size_threshold: 102400  # Bytes. Prompts larger than this are written to a temp file (default 100KB)
+
+analyzer:
+  model: claude-code
+  prompt: |
+    You are a senior code analyst. Analyze the PR diff and provide:
+    1. A summary of what the changes do
+    2. Key areas of concern
+    3. Potential impact on the codebase
+
+    ## Suggested Review Focus
+    - List specific areas reviewers should focus on
+
+summarizer:
+  # Summarizer 建议使用稳定的 API 模型。
+  # 如果 model 不是 gpt-*/o1-*/o3-*/o4-*，请显式指定 provider，并在 providers 中配置对应 api_key/base_url。
+  provider: glm
+  model: glm-5
+  prompt: |
+    You are a senior engineering lead synthesizing code review feedback.
+    Provide balanced, actionable conclusions.
+
+reviewers:
+  claude:
+    model: claude-code
+    prompt: |
+      You are a thorough code reviewer focused on correctness, security,
+      and maintainability. Review every changed file systematically.
+  codex:
+    model: codex-cli
+    prompt: |
+      You are a pragmatic code reviewer focused on performance, edge cases,
+      and real-world reliability. Challenge assumptions and find issues others miss.
+  # openai:
+  #   model: gpt-4o
+  #   prompt: |
+  #     You are an experienced code reviewer focused on design patterns,
+  #     API correctness, and code clarity. Provide actionable suggestions.
+  # gemini:
+  #   model: gemini-cli
+  #   prompt: |
+  #     You are a meticulous code reviewer focused on correctness and best practices.
+  # openrouter-review:
+  #   model: anthropic/claude-sonnet-4
+  #   provider: openrouter
+  #   prompt: |
+  #     You are a code reviewer focused on architecture and design quality.
+
+# Platform: auto-detected from git remote (github or gitlab)
+# platform:
+#   type: auto
+#   host: gitlab.example.com  # for self-hosted GitLab
+
+# Optional: context gathering
+# contextGatherer:
+#   enabled: true
+#   callChain:
+#     maxDepth: 2
+#     maxFilesToAnalyze: 20
+#   history:
+#     maxDays: 30
+#     maxPRs: 10
+#   docs:
+#     patterns: ["docs", "README.md", "ARCHITECTURE.md"]
+#     maxSize: 50000

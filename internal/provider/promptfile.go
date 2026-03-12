@@ -28,7 +28,9 @@ func PreparePromptForCli(prompt string, threshold int) PreparedPrompt {
 		return PreparedPrompt{Prompt: prompt, Cleanup: func() {}}
 	}
 
-	tmpFile, err := os.CreateTemp("", "codedebate-prompt-*.txt")
+	// 将大 prompt 写到当前工作目录下，避免 Claude Code 的 Read 工具无法访问系统临时目录
+	//（常见表现：在 Analyzer 阶段卡住，输出 [tool] Read: C:\\Users\\...\\Temp\\codedebate-prompt-*.txt）
+	tmpFile, err := os.CreateTemp(".", "codedebate-prompt-*.txt")
 	if err != nil {
 		util.Warnf("Failed to create temp file for large prompt, falling back to stdin: %v", err)
 		return PreparedPrompt{Prompt: prompt, Cleanup: func() {}}

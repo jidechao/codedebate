@@ -63,9 +63,10 @@ func (p *ClaudeCodeProvider) Chat(ctx context.Context, messages []Message, syste
 			// 会话续传：只发最后一条 user 消息
 			prompt = p.session.BuildPromptLastOnly(messages)
 		}
-		prepared := PreparePromptForCli(prompt, p.promptSizeThreshold)
-		defer prepared.Cleanup()
-		result, err := p.runClaude(ctx, prepared.Prompt, systemPrompt, snap)
+		// Claude Code CLI 支持从 stdin 读取 prompt（配合 -p/--print）。
+		// 这里不要把大 prompt 写到临时文件再让模型用 Read 工具读取：
+		// 在 Windows 上临时目录常被 Claude 工具访问限制，容易出现 Analyzer 阶段反复 [tool] Read 卡住。
+		result, err := p.runClaude(ctx, prompt, systemPrompt, snap)
 		if err != nil {
 			return "", err
 		}
@@ -84,17 +85,14 @@ func (p *ClaudeCodeProvider) ChatStream(ctx context.Context, messages []Message,
 		prompt = p.session.BuildPromptLastOnly(messages)
 	}
 
-	prepared := PreparePromptForCli(prompt, p.promptSizeThreshold)
-
 	chunks := make(chan string, 64)
 	errs := make(chan error, 1)
 
 	go func() {
 		defer close(chunks)
 		defer close(errs)
-		defer prepared.Cleanup()
 
-		err := p.runClaudeStream(ctx, prepared.Prompt, systemPrompt, snap, chunks)
+		err := p.runClaudeStream(ctx, prompt, systemPrompt, snap, chunks)
 		if err != nil {
 			errs <- err
 			return
@@ -115,7 +113,7 @@ func (p *ClaudeCodeProvider) ChatStream(ctx context.Context, messages []Message,
 //	--resume <id>             : 复用已有会话（非首次消息时）
 //	--system-prompt <prompt>  : 系统提示（仅首次消息时传入）
 func (p *ClaudeCodeProvider) buildArgs(systemPrompt string, streaming bool, snap SessionSnapshot) []string {
-	args := []string{"-p", "-",
+	args := []string{"-p",
 		"--strict-mcp-config", // 不加载用户配置的 MCP servers，节省内存
 	}
 
